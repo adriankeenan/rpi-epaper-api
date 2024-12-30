@@ -4,12 +4,20 @@ A rest API for setting the display image on a [Waveshare 4.26"](https://www.wave
 eink HAT connected to a Raspberry Pi. Supports scaling and rotating the input image. Endpoints are also provided for
 fetching display contents and clearing the display.
 
-This project utilises the [Waveshare e-paper SDKs](https://github.com/waveshareteam/e-Paper) for handling the device commands.
+This project utilises the [Waveshare e-paper SDKs](https://github.com/waveshareteam/e-Paper) for handling the device commands. This SDK does not seem to have
+any official documentation, therefore the following pages
+- [Waveshare display manual](https://www.waveshare.com/wiki/4.26inch_e-Paper_HAT_Manual)
+- [epd test script](https://github.com/waveshareteam/e-Paper/blob/master/RaspberryPi_JetsonNano/python/examples/epd_4in26_test.py)
+- [epd library code](https://github.com/waveshareteam/e-Paper/blob/master/RaspberryPi_JetsonNano/python/lib/waveshare_epd/epd4in26.py)
 
 For convenience, this tool is packaged as a docker container. It can also be run on bare metal, but you will need to
 add the Waveshare SDK to your path (see [Dockerfile](./Dockerfile)).
 
 ⚠️ The API is served via the Flask development webserver - you should not expose it publicly.
+
+⚠️ A shared instance of the `epd` object is used across requests, therefore it is not possible to run this application
+on a webserver with more than a single worker, should you choose to use a webserver other than the Flask development
+webserver.
 
 ## How to use
 
@@ -40,7 +48,6 @@ Set image from pipe
 ```commandline
 cat image.jpg | curl --form image=@- --form resize=FIT --form background=WHITE http://rpi:5000
 ```
-
 
 Data should be sent form-encoded.
 
