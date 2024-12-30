@@ -3,7 +3,9 @@ from PIL import Image
 
 from models import Resolution, Rotation, Resize, BackgroundColour
 
-def resize_img(img: Image, rotation: Rotation, resize: Resize, background: BackgroundColour, display_res: Resolution) -> Image:
+
+def resize_img(img: Image, dither: bool, rotation: Rotation, resize: Resize, background: BackgroundColour,
+               display_res: Resolution) -> Image:
     # Rotate
     out_img = img.rotate(angle=rotation, expand=True)
 
@@ -19,6 +21,9 @@ def resize_img(img: Image, rotation: Rotation, resize: Resize, background: Backg
 
     scaled_image = out_img.resize(scaled_resolution)
 
+    dither_setting = Image.Dither.FLOYDSTEINBERG if dither else Image.Dither.NONE
+    scaled_image = scaled_image.convert('1', dither=dither_setting)
+
     # Add scaled image to full size canvas
     bg_colour = 255 if background == BackgroundColour.WHITE else 0
     x = int((display_res.width - scaled_image.width) / 2)
@@ -27,8 +32,13 @@ def resize_img(img: Image, rotation: Rotation, resize: Resize, background: Backg
     canvas.paste(scaled_image, (x, y))
     return canvas
 
+
 def get_resize_scale(img: Image, crop: bool, display_res: Resolution) -> Tuple[int, int]:
     width_scale = display_res.width / img.width
     height_scale = display_res.height / img.height
     scale = max(width_scale, height_scale) if crop else min(width_scale, height_scale)
     return int(img.width * scale), int(img.height * scale)
+
+
+def image_changed(existing_image: Image, new_image: Image) -> bool:
+    return list(new_image.getdata()) != list(existing_image.getdata())
