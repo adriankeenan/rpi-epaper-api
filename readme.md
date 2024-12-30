@@ -5,7 +5,7 @@ eink HAT connected to a Raspberry Pi. Supports scaling and rotating the input im
 fetching display contents and clearing the display.
 
 This project utilises the [Waveshare e-paper SDKs](https://github.com/waveshareteam/e-Paper) for handling the device commands. This SDK does not seem to have
-any official documentation, therefore the following pages
+any official documentation, the API usage was obtained from these pages:
 - [Waveshare display manual](https://www.waveshare.com/wiki/4.26inch_e-Paper_HAT_Manual)
 - [epd test script](https://github.com/waveshareteam/e-Paper/blob/master/RaspberryPi_JetsonNano/python/examples/epd_4in26_test.py)
 - [epd library code](https://github.com/waveshareteam/e-Paper/blob/master/RaspberryPi_JetsonNano/python/lib/waveshare_epd/epd4in26.py)
