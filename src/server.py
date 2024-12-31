@@ -1,3 +1,4 @@
+import json
 from pathlib import Path
 
 from flask import Flask, request, jsonify, send_file, Response
@@ -5,16 +6,23 @@ from PIL import Image, UnidentifiedImageError
 
 import logging
 
-from models import Resolution, Rotation, Resize, BackgroundColour
+from models import Resolution, Rotation, Resize, BackgroundColour, Mode
 
-from img_utils import resize_img
-from epd_utils import get_epd_lock, handle_epd_error, display_clear, display_img
+from img_utils import resize_img, image_changed
+from epd_utils import handle_epd_error, display_clear, display_img, get_epd
 
 IMG_PATH = 'img.png'
 DISPLAY_RESOLUTION = Resolution(800, 480)
 
-def get_last_set_image() -> Response | tuple[Response, int]:
+logging.basicConfig(level=logging.DEBUG)
 
+epd = get_epd()
+
+app = Flask(__name__)
+
+
+@app.route("/", methods=['GET'])
+def get_last_set_image() -> Response | tuple[Response, int]:
     if not Path(IMG_PATH).exists():
         logging.error(f'Existing image file doesn\'t exist')
         return jsonify(message='Framebuffer image not found'), 404
@@ -25,22 +33,12 @@ def get_last_set_image() -> Response | tuple[Response, int]:
         logging.error(f'Unable to load last set image - {str(e)}')
         return jsonify(message='Unknown error fetching file'), 500
 
-def image_changed(new_image: Image) -> bool:
-    try:
-        existing_image = Image.open(IMG_PATH)
-    except FileNotFoundError:
-        return True
-    except Exception as e:
-        logging.error(e)
-        return True
 
-    return list(new_image.getdata()) != list(existing_image.getdata())
-
+@app.route("/", methods=['POST'])
 def show_image() -> tuple[Response, int]:
-
     try:
-        img_file = request.files['image'].stream
-        image = Image.open(img_file)
+        img_file = request.files['image']
+        image = Image.open(img_file.stream)
     except UnidentifiedImageError:
         return jsonify(message='"image" does not appear to be valid'), 422
     except Exception as e:
@@ -62,38 +60,42 @@ def show_image() -> tuple[Response, int]:
     except ValueError:
         return jsonify(message=f'"background" invalid, must be one of {", ".join([x for x in BackgroundColour])}'), 422
 
-    image_to_display = resize_img(image, rotate, resize, background, DISPLAY_RESOLUTION)
+    try:
+        mode = Mode(request.form.get('mode', Mode.FAST.value))
+    except ValueError:
+        return jsonify(message=f'"mode" invalid, must be one of {", ".join([x for x in Mode])}'), 422
 
-    update_image = image_changed(image_to_display)
+    dither = request.form.get('dither', 'true') in ['true', '1']
+
+    loc = locals()
+    image_settings = {i: loc[i] for i in ('mode', 'dither', 'rotate', 'resize', 'background')}
+    image_settings['image'] = img_file.filename
+    image_settings['image_resolution'] = [image.width, image.height]
+    logging.debug(f'Creating an image with the following settings: {json.dumps(image_settings)}')
+
+    image_to_display = resize_img(image, dither, rotate, resize, background, DISPLAY_RESOLUTION)
+
+    try:
+        update_image = image_changed(Image.open(IMG_PATH), image_to_display)
+    except Exception as e:
+        logging.warning(f'Unable to determine image difference - {str(e)}')
+        update_image = True
+
     if update_image:
         try:
-            display_img(image_to_display)
+            display_img(epd, image_to_display, mode)
             image_to_display.save(IMG_PATH)
         except Exception as e:
             return handle_epd_error(e)
 
     return jsonify(message='Success', updated=update_image), 200
 
+
+@app.route("/", methods=['DELETE'])
 def clear_image():
     try:
-        display_clear()
+        display_clear(epd)
         Image.new('1', DISPLAY_RESOLUTION, 255).save(IMG_PATH)
         return jsonify(message='Success'), 200
     except Exception as e:
         return handle_epd_error(e)
-
-
-logging.basicConfig(level=logging.DEBUG)
-
-app = Flask(__name__)
-
-@app.route("/", methods=['GET', 'POST', 'DELETE'])
-def img():
-    if request.method == 'GET':
-        return get_last_set_image()
-
-    if request.method == 'POST':
-        return show_image()
-
-    if request.method == 'DELETE':
-        return clear_image()
