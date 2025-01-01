@@ -3,3 +3,4 @@ spidev
 gpiozero
 Flask~=3.0.3
 pillow~=10.4.0
+pillow-heif~=0.21.0
