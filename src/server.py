@@ -2,7 +2,9 @@ import json
 from pathlib import Path
 
 from flask import Flask, request, jsonify, send_file, Response
+
 from PIL import Image, UnidentifiedImageError
+from pillow_heif import register_heif_opener
 
 import logging
 
@@ -11,10 +13,13 @@ from models import Resolution, Rotation, Resize, BackgroundColour, Mode
 from img_utils import resize_img, image_changed
 from epd_utils import handle_epd_error, display_clear, display_img, get_epd
 
+
 IMG_PATH = 'img.png'
 DISPLAY_RESOLUTION = Resolution(800, 480)
 
 logging.basicConfig(level=logging.DEBUG)
+
+register_heif_opener()
 
 epd = get_epd()
 
