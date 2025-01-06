@@ -1,2 +1,5 @@
 .idea
 **.pyc
+
+# image storage when running locally
+src/img.png
