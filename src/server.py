@@ -1,5 +1,7 @@
 import json
+import os
 from pathlib import Path
+from unittest.mock import Mock
 
 from flask import Flask, request, jsonify, send_file, Response
 
@@ -13,7 +15,6 @@ from models import Resolution, Rotation, Resize, BackgroundColour, Mode
 from img_utils import resize_img, image_changed
 from epd_utils import handle_epd_error, display_clear, display_img, get_epd
 
-
 IMG_PATH = 'img.png'
 DISPLAY_RESOLUTION = Resolution(800, 480)
 
@@ -21,7 +22,16 @@ logging.basicConfig(level=logging.DEBUG)
 
 register_heif_opener()
 
-epd = get_epd()
+
+def str_is_true(value) -> bool:
+    return value in [True, 'true', '1']
+
+
+def mock_epd() -> bool:
+    return str_is_true(os.getenv('EPD_MOCK'))
+
+
+epd = get_epd() if mock_epd() is False else Mock()
 
 app = Flask(__name__)
 
@@ -70,7 +80,7 @@ def show_image() -> tuple[Response, int]:
     except ValueError:
         return jsonify(message=f'"mode" invalid, must be one of {", ".join([x for x in Mode])}'), 422
 
-    dither = request.form.get('dither', 'true') in ['true', '1']
+    dither = str_is_true(request.form.get('dither', True))
 
     loc = locals()
     image_settings = {i: loc[i] for i in ('mode', 'dither', 'rotate', 'resize', 'background')}
@@ -104,3 +114,6 @@ def clear_image():
         return jsonify(message='Success'), 200
     except Exception as e:
         return handle_epd_error(e)
+
+if __name__ == "__main__":
+    app.run(port=5000)

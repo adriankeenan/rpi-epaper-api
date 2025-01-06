@@ -6,9 +6,12 @@ from flask import Response, jsonify
 
 from models import Mode
 
-path.append('lib')
-# noinspection PyUnresolvedReferences
-from waveshare_epd import epd4in26
+try:
+    path.append('lib')
+    # noinspection PyUnresolvedReferences
+    from waveshare_epd import epd4in26
+except Exception as e:
+    logging.warning('could not import wavesare lib')
 
 
 def get_epd():

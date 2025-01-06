@@ -19,9 +19,9 @@ add the Waveshare SDK to your path (see [Dockerfile](./Dockerfile)).
 on a webserver with more than a single worker, should you choose to use a webserver other than the Flask development
 webserver.
 
-## How to use
+## Setup
 
-### Install
+### Install on a Raspberry Pi + Display
 
 Build and run the container:
 
@@ -34,6 +34,17 @@ docker run -p 5000:5000 --restart=always --privileged rpi-eink-api
 Now you're ready to send images to the display!
 
 `--restart=always` will ensure that the container is restarted on crash and on system boot. 
+
+### Running locally
+
+You can run also run the API locally using the `EPD_MOCK=true` env var to mock all calls to the display itself.
+You can still check that the correct image is produced by looking at `src/img.png`.
+
+```commandline
+EPD_MOCK=true python3 src/server.py
+```
+
+## API
 
 ### Setting the image
 
