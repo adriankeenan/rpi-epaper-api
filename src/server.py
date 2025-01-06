@@ -13,7 +13,6 @@ from models import Resolution, Rotation, Resize, BackgroundColour, Mode
 from img_utils import resize_img, image_changed
 from epd_utils import handle_epd_error, display_clear, display_img, get_epd
 
-
 IMG_PATH = 'img.png'
 DISPLAY_RESOLUTION = Resolution(800, 480)
 
@@ -24,6 +23,10 @@ register_heif_opener()
 epd = get_epd()
 
 app = Flask(__name__)
+
+
+def str_is_true(value) -> bool:
+    return value in [True, 'true', '1']
 
 
 @app.route("/", methods=['GET'])
@@ -70,10 +73,12 @@ def show_image() -> tuple[Response, int]:
     except ValueError:
         return jsonify(message=f'"mode" invalid, must be one of {", ".join([x for x in Mode])}'), 422
 
-    dither = request.form.get('dither', 'true') in ['true', '1']
+    dither = str_is_true(request.form.get('dither', True))
+
+    prevent_redraw = str_is_true(request.form.get('prevent_redraw', False))
 
     loc = locals()
-    image_settings = {i: loc[i] for i in ('mode', 'dither', 'rotate', 'resize', 'background')}
+    image_settings = {i: loc[i] for i in ('mode', 'dither', 'prevent_redraw', 'rotate', 'resize', 'background')}
     image_settings['image'] = img_file.filename
     image_settings['image_resolution'] = [image.width, image.height]
     logging.debug(f'Creating an image with the following settings: {json.dumps(image_settings)}')
@@ -81,7 +86,7 @@ def show_image() -> tuple[Response, int]:
     image_to_display = resize_img(image, dither, rotate, resize, background, DISPLAY_RESOLUTION)
 
     try:
-        update_image = image_changed(Image.open(IMG_PATH), image_to_display)
+        update_image = image_changed(Image.open(IMG_PATH), image_to_display) if prevent_redraw else True
     except Exception as e:
         logging.warning(f'Unable to determine image difference - {str(e)}')
         update_image = True
