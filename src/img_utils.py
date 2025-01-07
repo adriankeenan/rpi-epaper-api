@@ -1,10 +1,10 @@
 from typing import Tuple
 from PIL import Image
 
-from models import Resolution, Rotation, Resize, BackgroundColour
+from models import Resolution, Rotation, Resize, BackgroundColour, Mode
 
 
-def resize_img(img: Image, dither: bool, rotation: Rotation, resize: Resize, background: BackgroundColour,
+def resize_img(img: Image, mode: Mode, dither: bool, rotation: Rotation, resize: Resize, background: BackgroundColour,
                display_res: Resolution) -> Image:
     # Rotate
     out_img = img.rotate(angle=rotation, expand=True)
@@ -21,14 +21,16 @@ def resize_img(img: Image, dither: bool, rotation: Rotation, resize: Resize, bac
 
     scaled_image = out_img.resize(scaled_resolution)
 
+    image_mode = 'L' if mode == Mode.FOUR_GRAY else '1'
+
     dither_setting = Image.Dither.FLOYDSTEINBERG if dither else Image.Dither.NONE
-    scaled_image = scaled_image.convert('1', dither=dither_setting)
+    scaled_image = scaled_image.convert(image_mode, dither=dither_setting)
 
     # Add scaled image to full size canvas
     bg_colour = 255 if background == BackgroundColour.WHITE else 0
     x = int((display_res.width - scaled_image.width) / 2)
     y = int((display_res.height - scaled_image.height) / 2)
-    canvas = Image.new('1', display_res, bg_colour)
+    canvas = Image.new(image_mode, display_res, bg_colour)
     canvas.paste(scaled_image, (x, y))
     return canvas
 

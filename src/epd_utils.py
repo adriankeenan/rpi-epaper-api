@@ -25,8 +25,13 @@ def display_clear(epd):
 
 
 def display_img(epd, image: Image, mode: Mode):
-    if mode == Mode.PARTIAL:
+    if mode == Mode.FOUR_GRAY:
+        epd.init_4GRAY()
+        epd.display_4Gray(epd.getbuffer_4Gray(image))
+    elif mode == Mode.PARTIAL:
         epd.init()
+        # display_Partial will leave ghosting from the previous images. Calling a second time clears this almost
+        # entirely.
         for i in range(2):
             epd.display_Partial(epd.getbuffer(image))
     else:

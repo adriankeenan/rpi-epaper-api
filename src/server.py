@@ -88,7 +88,7 @@ def show_image() -> tuple[Response, int]:
     image_settings['image_resolution'] = [image.width, image.height]
     logging.debug(f'Creating an image with the following settings: {json.dumps(image_settings)}')
 
-    image_to_display = resize_img(image, dither, rotate, resize, background, DISPLAY_RESOLUTION)
+    image_to_display = resize_img(image, mode, dither, rotate, resize, background, DISPLAY_RESOLUTION)
 
     try:
         update_image = image_changed(Image.open(IMG_PATH), image_to_display)

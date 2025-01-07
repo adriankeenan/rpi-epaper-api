@@ -26,3 +26,4 @@ class BackgroundColour(StrEnum):
 class Mode(StrEnum):
     FAST = 'FAST'
     PARTIAL = 'PARTIAL'
+    FOUR_GRAY = '4GRAY'
