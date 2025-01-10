@@ -25,8 +25,13 @@ def display_clear(epd):
 
 
 def display_img(epd, image: Image, mode: Mode):
-    if mode == Mode.PARTIAL:
+    if mode == Mode.FOUR_GRAY:
+        epd.init_4GRAY()
+        epd.display_4Gray(epd.getbuffer_4Gray(image))
+    elif mode == Mode.PARTIAL:
         epd.init()
+        # display_Partial will leave ghosting from the previous images. Calling a second time clears this almost
+        # entirely.
         for i in range(2):
             epd.display_Partial(epd.getbuffer(image))
     else:
@@ -46,3 +51,8 @@ def handle_epd_error(e: Exception) -> tuple[Response, int]:
     else:
         logging.error(f'Unexpected error occurred - {str(e)}')
         return jsonify(message='Unexpected error occurred'), 500
+
+def palette_4gray() -> list[int]:
+    # @see https://github.com/waveshareteam/e-Paper/blob/ecdd8cf7bab311e6e290c84c68d474deafb7ca8d/RaspberryPi_JetsonNano/python/lib/waveshare_epd/epd4in26.py#L38
+    # Copied, rather than imported, to allow access without importing epd lib (eg when mocking)
+    return [0xff, 0xC0, 0x80, 0x00]
