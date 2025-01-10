@@ -51,3 +51,8 @@ def handle_epd_error(e: Exception) -> tuple[Response, int]:
     else:
         logging.error(f'Unexpected error occurred - {str(e)}')
         return jsonify(message='Unexpected error occurred'), 500
+
+def palette_4gray() -> list[int]:
+    # @see https://github.com/waveshareteam/e-Paper/blob/ecdd8cf7bab311e6e290c84c68d474deafb7ca8d/RaspberryPi_JetsonNano/python/lib/waveshare_epd/epd4in26.py#L38
+    # Copied, rather than imported, to allow access without importing epd lib (eg when mocking)
+    return [0xff, 0xC0, 0x80, 0x00]
